@@ -3,12 +3,8 @@ import { IconFileMusic, IconLoader2 } from '@tabler/icons-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { getServiceHub } from '@/hooks/useServiceHub'
-import {
-  provisionWhisper,
-  transcribeAudioFile,
-  whisperStatus,
-  type WhisperProgress,
-} from '@/care/whisper'
+import { transcribeAudioFile } from '@/care/whisper'
+import { progressLabel, useWhisperInstall } from '@/care/useWhisperInstall'
 
 // IA Pros Santé : « Joindre un audio » dans les formulaires de Projet.
 // L'enregistrement (dictaphone, mémo du téléphone…) est transcrit en local
@@ -21,18 +17,6 @@ const AUDIO_FILTERS = [
   { name: 'Audio', extensions: ['wav', 'mp3', 'ogg', 'flac'] },
 ]
 
-function progressLabel(progress: WhisperProgress | null): string {
-  if (!progress) return 'Installation de la transcription…'
-  const what =
-    progress.stage === 'model' ? 'du modèle de transcription' : 'du module'
-  if (!progress.total) return `Téléchargement ${what}…`
-  const percent = Math.min(
-    100,
-    Math.round((progress.downloaded / progress.total) * 100)
-  )
-  return `Téléchargement ${what}… ${percent} %`
-}
-
 export function CareAudioTranscribeButton({
   onText,
 }: {
@@ -40,7 +24,7 @@ export function CareAudioTranscribeButton({
 }) {
   const [step, setStep] = useState<Step>('idle')
   const [pendingPath, setPendingPath] = useState<string | null>(null)
-  const [progress, setProgress] = useState<WhisperProgress | null>(null)
+  const { isReady, install, progress } = useWhisperInstall()
 
   const transcribe = async (path: string) => {
     setStep('transcribing')
@@ -70,8 +54,7 @@ export function CareAudioTranscribeButton({
     const path = Array.isArray(picked) ? picked[0] : picked
     if (!path) return
     try {
-      const status = await whisperStatus()
-      if (status.binaryPresent && status.modelPresent) {
+      if (await isReady()) {
         await transcribe(path)
       } else {
         setPendingPath(path)
@@ -85,9 +68,8 @@ export function CareAudioTranscribeButton({
 
   const handleInstall = async () => {
     setStep('installing')
-    setProgress(null)
     try {
-      await provisionWhisper(setProgress)
+      await install()
       if (pendingPath) await transcribe(pendingPath)
       else setStep('idle')
     } catch (err) {
