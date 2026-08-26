@@ -15,9 +15,15 @@ use crate::core::app::commands::get_jan_data_folder_path;
 const WHISPER_BIN_URL: &str =
     "https://github.com/ggml-org/whisper.cpp/releases/download/b4938/whisper-bin-x64.zip";
 const MODEL_BASE_URL: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
-// Formats décodés nativement par whisper-cli (miniaudio). Le m4a attendra
-// l'intégration de ffmpeg.
+// Build officiel (lié depuis ffmpeg.org). Variante LGPL : décodage audio
+// complet, licence compatible avec une distribution commerciale.
+const FFMPEG_URL: &str =
+    "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n9.0-latest-win64-lgpl-9.0.zip";
+// Formats décodés nativement par whisper-cli (miniaudio).
 const SUPPORTED_EXTENSIONS: [&str; 4] = ["wav", "mp3", "ogg", "flac"];
+// Formats convertis en WAV via ffmpeg avant transcription (m4a = mémos
+// vocaux iPhone, le cas réel le plus fréquent).
+const CONVERT_EXTENSIONS: [&str; 1] = ["m4a"];
 const PROGRESS_EVENT: &str = "care:whisper-progress";
 
 #[derive(Serialize, Clone)]
@@ -25,6 +31,7 @@ const PROGRESS_EVENT: &str = "care:whisper-progress";
 pub struct WhisperStatus {
     pub binary_present: bool,
     pub model_present: bool,
+    pub ffmpeg_present: bool,
     pub dir: String,
 }
 
@@ -48,6 +55,11 @@ fn binary_path<R: Runtime>(app_handle: &tauri::AppHandle<R>) -> PathBuf {
     } else {
         "whisper-cli"
     };
+    whisper_dir(app_handle).join("bin").join(name)
+}
+
+fn ffmpeg_path<R: Runtime>(app_handle: &tauri::AppHandle<R>) -> PathBuf {
+    let name = if cfg!(windows) { "ffmpeg.exe" } else { "ffmpeg" };
     whisper_dir(app_handle).join("bin").join(name)
 }
 
@@ -77,6 +89,7 @@ fn status<R: Runtime>(
     Ok(WhisperStatus {
         binary_present: binary_path(app_handle).is_file(),
         model_present: model_path(app_handle, model)?.is_file(),
+        ffmpeg_present: ffmpeg_path(app_handle).is_file(),
         dir: whisper_dir(app_handle).to_string_lossy().to_string(),
     })
 }
@@ -140,11 +153,18 @@ async fn download_file<R: Runtime>(
     Ok(())
 }
 
-fn extract_whisper_cli(archive_path: &PathBuf, bin_dir: &PathBuf) -> Result<(), String> {
+// Extrait à plat dans bin/ les entrées retenues par `keep` ; `required`
+// doit en faire partie, sinon l'archive est considérée invalide.
+fn extract_binaries(
+    archive_path: &PathBuf,
+    bin_dir: &PathBuf,
+    keep: fn(&str) -> bool,
+    required: &str,
+) -> Result<(), String> {
     let file = fs::File::open(archive_path).map_err(|e| e.to_string())?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
     fs::create_dir_all(bin_dir).map_err(|e| e.to_string())?;
-    let mut found_cli = false;
+    let mut found_required = false;
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
         let Some(name) = entry
@@ -153,19 +173,17 @@ fn extract_whisper_cli(archive_path: &PathBuf, bin_dir: &PathBuf) -> Result<(), 
         else {
             continue;
         };
-        // Seuls l'exécutable CLI et ses DLL nous servent (pas les autres
-        // exemples de la release).
-        if name != "whisper-cli.exe" && !name.ends_with(".dll") {
+        if entry.is_dir() || !keep(&name) {
             continue;
         }
-        if name == "whisper-cli.exe" {
-            found_cli = true;
+        if name == required {
+            found_required = true;
         }
         let mut out = fs::File::create(bin_dir.join(&name)).map_err(|e| e.to_string())?;
         std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
     }
-    if !found_cli {
-        return Err("whisper-cli.exe absent de l'archive téléchargée".to_string());
+    if !found_required {
+        return Err(format!("{required} absent de l'archive téléchargée"));
     }
     Ok(())
 }
@@ -183,7 +201,22 @@ pub async fn care_provision_whisper<R: Runtime>(
     if !binary_path(&app_handle).is_file() {
         let archive = dir.join("whisper-bin.zip");
         download_file(&app_handle, WHISPER_BIN_URL, &archive, "binary").await?;
-        extract_whisper_cli(&archive, &dir.join("bin"))?;
+        // Seuls l'exécutable CLI et ses DLL nous servent (pas les autres
+        // exemples de la release).
+        extract_binaries(
+            &archive,
+            &dir.join("bin"),
+            |name| name == "whisper-cli.exe" || name.ends_with(".dll"),
+            "whisper-cli.exe",
+        )?;
+        let _ = fs::remove_file(&archive);
+    }
+
+    if !ffmpeg_path(&app_handle).is_file() {
+        let archive = dir.join("ffmpeg.zip");
+        download_file(&app_handle, FFMPEG_URL, &archive, "ffmpeg").await?;
+        // Build statique : un seul exécutable suffit (ffprobe/ffplay inutiles).
+        extract_binaries(&archive, &dir.join("bin"), |name| name == "ffmpeg.exe", "ffmpeg.exe")?;
         let _ = fs::remove_file(&archive);
     }
 
@@ -194,6 +227,66 @@ pub async fn care_provision_whisper<R: Runtime>(
     }
 
     status(&app_handle, &model)
+}
+
+fn hide_console(command: &mut tokio::process::Command) {
+    #[cfg(windows)]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    #[cfg(not(windows))]
+    let _ = command;
+}
+
+fn stderr_tail(stderr: &[u8]) -> String {
+    let text = String::from_utf8_lossy(stderr);
+    let mut lines: Vec<&str> = text.lines().rev().take(5).collect();
+    lines.reverse();
+    lines.join("\n")
+}
+
+// m4a → WAV 16 kHz mono via ffmpeg, dans un fichier temporaire du dossier
+// whisper (supprimé par l'appelant après transcription).
+async fn convert_to_wav<R: Runtime>(
+    app_handle: &tauri::AppHandle<R>,
+    input: &PathBuf,
+) -> Result<PathBuf, String> {
+    let ffmpeg = ffmpeg_path(app_handle);
+    if !ffmpeg.is_file() {
+        return Err(
+            "Conversion audio non installée : relancez l'installation de la transcription"
+                .to_string(),
+        );
+    }
+    let converted = whisper_dir(app_handle).join("conversion.wav");
+    let mut command = tokio::process::Command::new(&ffmpeg);
+    command
+        .arg("-hide_banner")
+        .arg("-loglevel")
+        .arg("error")
+        .arg("-y")
+        .arg("-i")
+        .arg(input)
+        .arg("-ar")
+        .arg("16000")
+        .arg("-ac")
+        .arg("1")
+        .arg("-sample_fmt")
+        .arg("s16")
+        .arg(&converted);
+    hide_console(&mut command);
+    let output = command
+        .output()
+        .await
+        .map_err(|e| format!("Impossible de lancer ffmpeg : {e}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "Échec de la conversion audio : {}",
+            stderr_tail(&output.stderr)
+        ));
+    }
+    Ok(converted)
 }
 
 #[tauri::command]
@@ -211,9 +304,10 @@ pub async fn care_transcribe<R: Runtime>(
         .extension()
         .map(|e| e.to_string_lossy().to_lowercase())
         .unwrap_or_default();
-    if !SUPPORTED_EXTENSIONS.contains(&extension.as_str()) {
+    let needs_conversion = CONVERT_EXTENSIONS.contains(&extension.as_str());
+    if !needs_conversion && !SUPPORTED_EXTENSIONS.contains(&extension.as_str()) {
         return Err(format!(
-            "Format .{extension} non pris en charge (formats acceptés : wav, mp3, ogg, flac)"
+            "Format .{extension} non pris en charge (formats acceptés : wav, mp3, m4a, ogg, flac)"
         ));
     }
 
@@ -223,6 +317,13 @@ pub async fn care_transcribe<R: Runtime>(
         return Err("Transcription non installée : lancez d'abord le téléchargement".to_string());
     }
 
+    let temp_wav = if needs_conversion {
+        Some(convert_to_wav(&app_handle, &audio).await?)
+    } else {
+        None
+    };
+    let input = temp_wav.as_ref().unwrap_or(&audio);
+
     let threads = std::thread::available_parallelism()
         .map(|n| n.get().min(8))
         .unwrap_or(4);
@@ -231,34 +332,27 @@ pub async fn care_transcribe<R: Runtime>(
         .arg("-m")
         .arg(&model_file)
         .arg("-f")
-        .arg(&audio)
+        .arg(input)
         .arg("-l")
         .arg(language.unwrap_or_else(|| "fr".to_string()))
         .arg("-t")
         .arg(threads.to_string())
         .arg("-nt")
         .arg("-np");
-    #[cfg(windows)]
-    {
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
+    hide_console(&mut command);
     let output = command
         .output()
         .await
-        .map_err(|e| format!("Impossible de lancer whisper-cli : {e}"))?;
+        .map_err(|e| format!("Impossible de lancer whisper-cli : {e}"));
+    if let Some(temp) = &temp_wav {
+        let _ = fs::remove_file(temp);
+    }
+    let output = output?;
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let tail: String = stderr
-            .lines()
-            .rev()
-            .take(5)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .collect::<Vec<_>>()
-            .join("\n");
-        return Err(format!("Échec de la transcription : {tail}"));
+        return Err(format!(
+            "Échec de la transcription : {}",
+            stderr_tail(&output.stderr)
+        ));
     }
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }

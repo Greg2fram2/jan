@@ -12,7 +12,11 @@ import {
 export function progressLabel(progress: WhisperProgress | null): string {
   if (!progress) return 'Installation de la transcription…'
   const what =
-    progress.stage === 'model' ? 'du modèle de transcription' : 'du module'
+    progress.stage === 'model'
+      ? 'du modèle de transcription'
+      : progress.stage === 'ffmpeg'
+        ? 'du convertisseur audio'
+        : 'du module'
   if (!progress.total) return `Téléchargement ${what}…`
   const percent = Math.min(
     100,
@@ -24,10 +28,10 @@ export function progressLabel(progress: WhisperProgress | null): string {
 export function useWhisperInstall() {
   const [progress, setProgress] = useState<WhisperProgress | null>(null)
 
-  // true si binaire + modèle sont déjà en place
+  // true si binaire + convertisseur + modèle sont déjà en place
   const isReady = async (): Promise<boolean> => {
     const status = await whisperStatus()
-    return status.binaryPresent && status.modelPresent
+    return status.binaryPresent && status.modelPresent && status.ffmpegPresent
   }
 
   const install = async (): Promise<void> => {

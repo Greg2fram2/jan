@@ -97,7 +97,7 @@ export function CareDictationButton({
     return (
       <span className="inline-flex items-center gap-2 text-xs">
         <span className="text-main-view-fg/60">
-          La transcription locale doit d'abord être installée (~600 Mo, une
+          La transcription locale doit d'abord être installée (~750 Mo, une
           seule fois).
         </span>
         <button type="button" className="underline" onClick={handleInstall}>

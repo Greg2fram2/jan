@@ -9,11 +9,12 @@ import { getServiceHub } from '@/hooks/useServiceHub'
 export interface WhisperStatus {
   binaryPresent: boolean
   modelPresent: boolean
+  ffmpegPresent: boolean
   dir: string
 }
 
 export interface WhisperProgress {
-  stage: 'binary' | 'model'
+  stage: 'binary' | 'ffmpeg' | 'model'
   downloaded: number
   total: number
 }
@@ -61,7 +62,8 @@ export async function provisionWhisper(
   }
 }
 
-// Transcrit un fichier audio (wav, mp3, ogg, flac) et renvoie le texte brut.
+// Transcrit un fichier audio (wav, mp3, m4a, ogg, flac) et renvoie le texte
+// brut. Le m4a est converti en WAV par ffmpeg côté backend.
 export async function transcribeAudioFile(path: string): Promise<string> {
   const model = await currentWhisperModel()
   return invoke<string>('care_transcribe', { path, model, language: 'fr' })
