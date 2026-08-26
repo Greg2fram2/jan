@@ -130,6 +130,26 @@ pub fn write_file_sync<R: Runtime>(
     fs::write(&path, content).map_err(|e| e.to_string())
 }
 
+// IA Pros Santé : écriture binaire (contenu en base64), utilisée pour
+// l'export .docx vers un chemin choisi via save_dialog.
+#[tauri::command]
+pub fn write_file_base64<R: Runtime>(
+    app_handle: tauri::AppHandle<R>,
+    args: Vec<String>,
+) -> Result<(), String> {
+    use base64::Engine as _;
+
+    if args.len() < 2 || args[0].is_empty() || args[1].is_empty() {
+        return Err("write_file_base64 error: Invalid argument".to_string());
+    }
+
+    let path = resolve_path(app_handle, &args[0]);
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(&args[1])
+        .map_err(|e| format!("write_file_base64 error: {e}"))?;
+    fs::write(&path, bytes).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub fn readdir_sync<R: Runtime>(
     app_handle: tauri::AppHandle<R>,
@@ -312,9 +332,20 @@ pub async fn save_dialog(options: Option<DialogOpenOptions>) -> Result<Option<St
     let mut dialog = AsyncFileDialog::new();
 
     if let Some(opts) = options {
-        // Set default path
+        // Set default path. A path with an extension is treated as a file name
+        // suggestion (possibly with a parent directory), otherwise a directory.
         if let Some(path) = opts.default_path {
-            dialog = dialog.set_directory(&path);
+            let p = std::path::Path::new(&path);
+            if p.extension().is_some() {
+                if let Some(parent) = p.parent().filter(|d| !d.as_os_str().is_empty()) {
+                    dialog = dialog.set_directory(parent);
+                }
+                if let Some(name) = p.file_name() {
+                    dialog = dialog.set_file_name(name.to_string_lossy());
+                }
+            } else {
+                dialog = dialog.set_directory(&path);
+            }
         }
 
         // Set filters

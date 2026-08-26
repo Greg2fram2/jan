@@ -7,7 +7,11 @@ import { useThreads } from '@/hooks/useThreads'
 import { useModelProvider } from '@/hooks/useModelProvider'
 import { defaultModel } from '@/lib/models'
 import { cn } from '@/lib/utils'
-import { buildThreadTitle, buildUserPrompt } from '@/care/buildPrompt'
+import {
+  buildExportFilename,
+  buildThreadTitle,
+  buildUserPrompt,
+} from '@/care/buildPrompt'
 import type { CareFormValues } from '@/care/buildPrompt'
 import type { CareInput, CareProject } from '@/care/types'
 
@@ -156,7 +160,8 @@ export default function CareProjectForm({ project }: { project: CareProject }) {
         created_at: Date.now(),
         description: project.description,
         instructions: project.system,
-        parameters: {},
+        // care_export_filename : nom proposé par le bouton « Exporter en Word »
+        parameters: { care_export_filename: buildExportFilename(project, values) },
       }
       const thread = await createThread(
         {

@@ -48,3 +48,18 @@ export function buildThreadTitle(
   const first = firstId ? values[firstId]?.trim() : undefined
   return first ? `${project.name} — ${first.slice(0, 40)}` : project.name
 }
+
+// Nom de fichier d'export résolu depuis le gabarit du Projet,
+// ex. "CR_{patient}_{date}.docx" → "CR_Léo M._26-08-2026.docx".
+export function buildExportFilename(
+  project: CareProject,
+  values: CareFormValues
+): string {
+  const template = project.output?.filename
+  if (!template) return `${project.slug}.docx`
+  return template.replace(/\{(\w+)\}/g, (_, id: string) => {
+    const value = values[id]?.trim()
+    // Les / de dates type 26/08/2026 deviennent des tirets
+    return value ? value.replace(/[/\\]/g, '-') : id
+  })
+}

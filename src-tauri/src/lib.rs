@@ -37,6 +37,7 @@ macro_rules! invoke_commands_with_extras {
         core::filesystem::commands::mv,
         core::filesystem::commands::file_stat,
         core::filesystem::commands::write_file_sync,
+        core::filesystem::commands::write_file_base64,
         core::filesystem::commands::write_yaml,
         core::filesystem::commands::read_yaml,
         core::filesystem::commands::decompress,
