@@ -1,13 +1,16 @@
 import { Link } from '@tanstack/react-router'
 import { MessageCircleIcon } from 'lucide-react'
 import { route } from '@/constants/routes'
-import { careProjects } from '@/care/projects'
+import { careProjectsForProfession } from '@/care/projects'
+import { useCareActivation } from '@/care/useCareActivation'
 import { cn } from '@/lib/utils'
 
 // IA Pros Santé : grille des Projets métier, affichée comme écran d'accueil.
 // Chaque carte ouvre le formulaire du Projet ; le chat libre reste accessible
 // par le lien discret en dessous.
 export default function CareProjectsGrid() {
+  const profession = useCareActivation((s) => s.profession)
+  const projects = careProjectsForProfession(profession)
   return (
     <div className="h-full overflow-y-auto px-6 py-10 flex flex-col">
       <div className="mx-auto w-full max-w-3xl my-auto">
@@ -22,7 +25,7 @@ export default function CareProjectsGrid() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {careProjects.map((project) => (
+          {projects.map((project) => (
             <Link
               key={project.slug}
               to={route.careProject}

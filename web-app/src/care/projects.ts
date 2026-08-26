@@ -66,3 +66,15 @@ export const careProjects: CareProject[] = loadDefaults()
 export function getCareProject(slug: string): CareProject | undefined {
   return careProjects.find((p) => p.slug === slug)
 }
+
+// Catalogue visible pour une profession donnée (clé `profession` de la config
+// d'activation). Un Projet sans profession est universel ; ajouter une
+// profession = ajouter des dossiers avec la bonne clé, sans toucher au code.
+export function careProjectsForProfession(
+  profession: string | null | undefined
+): CareProject[] {
+  if (!profession) return careProjects
+  return careProjects.filter(
+    (p) => !p.profession || p.profession === profession
+  )
+}
