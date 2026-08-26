@@ -43,6 +43,53 @@ struct WhisperProgress {
     total: u64,
 }
 
+// Projet métier sur disque : <données Jan>/care/projects/<slug>/ contenant
+// project.yaml (+ system.md, template.md). Lus tels quels, parsés côté front
+// (doc §3 : changer un Projet = changer sa config, pas de release).
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CareProjectFiles {
+    pub slug: String,
+    pub yaml: String,
+    pub system: String,
+    pub template: String,
+}
+
+#[tauri::command]
+pub fn care_list_projects<R: Runtime>(
+    app_handle: tauri::AppHandle<R>,
+) -> Result<Vec<CareProjectFiles>, String> {
+    let dir = get_jan_data_folder_path(app_handle)
+        .join("care")
+        .join("projects");
+    let mut projects = Vec::new();
+    let Ok(entries) = fs::read_dir(&dir) else {
+        // Pas de dossier projects/ : catalogue embarqué seul, pas une erreur.
+        return Ok(projects);
+    };
+    let mut folders: Vec<PathBuf> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_dir())
+        .collect();
+    folders.sort();
+    for folder in folders {
+        let Ok(yaml) = fs::read_to_string(folder.join("project.yaml")) else {
+            continue;
+        };
+        let Some(slug) = folder.file_name().map(|n| n.to_string_lossy().to_string()) else {
+            continue;
+        };
+        projects.push(CareProjectFiles {
+            slug,
+            yaml,
+            system: fs::read_to_string(folder.join("system.md")).unwrap_or_default(),
+            template: fs::read_to_string(folder.join("template.md")).unwrap_or_default(),
+        });
+    }
+    Ok(projects)
+}
+
 fn whisper_dir<R: Runtime>(app_handle: &tauri::AppHandle<R>) -> PathBuf {
     get_jan_data_folder_path(app_handle.clone())
         .join("care")

@@ -21,6 +21,7 @@ import { isDev } from '@/lib/utils'
 import { invoke } from '@tauri-apps/api/core'
 import { providerHasRemoteApiKeys, providerRemoteApiKeyChain } from '@/lib/provider-api-keys'
 import { bootstrapCareProvider } from '@/care/useCareActivation'
+import { refreshCareProjects } from '@/care/projects'
 
 type ProviderCustomHeader = {
   header: string
@@ -217,6 +218,9 @@ export function DataProvider() {
       // IA Pros Santé : réaffirme la config du provider verrouillé (URL,
       // modèle) si l'app est activée — corrige toute dérive au démarrage.
       bootstrapCareProvider()
+      // IA Pros Santé : charge les Projets déposés sur le disque
+      // (care/projects/), qui complètent ou remplacent le catalogue embarqué.
+      refreshCareProjects()
       // Register active remote providers with the backend, keys now in place.
       useModelProvider.getState().providers.forEach((provider) => {
         if (provider.active) {

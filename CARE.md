@@ -43,6 +43,7 @@ Windows en locale française formate `'1 400'`. À ignorer.
 | Activation par code (12 car., PBKDF2 + AES-GCM) | `web-app/src/care/activation.ts`, `useCareActivation.ts`, `containers/CareActivationScreen.tsx`, générateur `web-app/scripts/care-make-activation.mjs` |
 | Provider Scaleway verrouillé | `web-app/src/care/lockedProvider.ts` |
 | Projets métier (formulaires → thread) | `web-app/src/care/projects.ts`, `types.ts`, `buildPrompt.ts`, `defaults/<slug>/{project.yaml,system.md,template.md}`, `containers/CareProjectsGrid.tsx`, `CareProjectForm.tsx` |
+| Projets sur disque (doc § 3) | commande Rust `care_list_projects`, `refreshCareProjects()` dans `projects.ts` |
 | Mode avancé caché (UI Jan complète) | `web-app/src/care/useCareAdvancedMode.ts` (Ctrl/Cmd+Maj+A) |
 | Export Word (.docx) | `web-app/src/care/exportDocx.ts`, `containers/CareExportButton.tsx`, commande Rust `write_file_base64` |
 | Transcription audio locale (whisper.cpp) | `src-tauri/src/core/care/mod.rs` (commandes `care_whisper_status`, `care_provision_whisper`, `care_transcribe`), `web-app/src/care/whisper.ts`, `useWhisperInstall.ts` |
@@ -94,8 +95,15 @@ Le dépôt contient un blob de développement chiffrant le placeholder
 - [ ] Packaging : nom produit, icônes, installeur (rebrand léger seulement
   pour l'instant).
 
+## Projets sur disque
+
+Déposer un dossier dans `<données Jan>/care/projects/<slug>/` avec
+`project.yaml` (+ `system.md`, `template.md`) l'ajoute au catalogue au
+prochain démarrage — même slug qu'un Projet embarqué : le disque gagne.
+C'est le mécanisme « changement de config, pas de release » du § 3 de la
+doc : on peut ajuster prompts et formulaires chez un client par simple
+copie de fichiers. Un YAML invalide est ignoré (jamais d'écran vide).
+
 ## Reste à faire (dev, envisagé)
 
-- Projets chargés depuis le disque (`projects/<slug>/project.yaml`) pour
-  coller au § 3 de la doc : changer de config sans re-release.
 - Export PDF (doc § 2) — le .docx couvre le besoin immédiat.

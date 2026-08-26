@@ -4,7 +4,7 @@ import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 import HeaderPage from '@/containers/HeaderPage'
 import CareProjectForm from '@/containers/CareProjectForm'
-import { getCareProject } from '@/care/projects'
+import { useCareProjects } from '@/care/projects'
 import { route } from '@/constants/routes'
 
 export const Route = createFileRoute(route.careProject as any)({
@@ -15,7 +15,9 @@ function CareProjectPage() {
   const { slug } = useParams({ from: route.careProject as any }) as {
     slug: string
   }
-  const project = getCareProject(slug)
+  const project = useCareProjects((s) =>
+    s.projects.find((p) => p.slug === slug)
+  )
 
   return (
     <div className="flex h-full flex-col">

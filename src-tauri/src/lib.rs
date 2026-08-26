@@ -41,6 +41,7 @@ macro_rules! invoke_commands_with_extras {
         core::care::care_whisper_status,
         core::care::care_provision_whisper,
         core::care::care_transcribe,
+        core::care::care_list_projects,
         core::filesystem::commands::write_yaml,
         core::filesystem::commands::read_yaml,
         core::filesystem::commands::decompress,
