@@ -9,6 +9,8 @@ import { useAgentMode } from '@/hooks/useAgentMode'
 import { useAssistantSwitcher } from '@/hooks/useAssistantSwitcher'
 import { useMessageZoom } from '@/hooks/useMessageZoom'
 import { TEMPORARY_CHAT_ID } from '@/constants/chat'
+import { useCareAdvancedMode } from '@/care/useCareAdvancedMode'
+import { toast } from 'sonner'
 
 export function KeyboardShortcutsProvider() {
   const { open, setLeftPanel } = useLeftPanel()
@@ -81,6 +83,22 @@ export function KeyboardShortcutsProvider() {
     ...switchAssistantShortcut,
     callback: () => {
       useAssistantSwitcher.getState().cycleHandler?.()
+    },
+  })
+
+  // IA Pros Santé : bascule du mode avancé caché (Ctrl/Cmd+Maj+A)
+  useKeyboardShortcut({
+    ...PlatformShortcuts[ShortcutAction.TOGGLE_ADVANCED_MODE],
+    callback: () => {
+      const advanced = useCareAdvancedMode.getState().toggle()
+      toast.info(
+        advanced ? 'Mode avancé activé' : 'Mode avancé désactivé',
+        {
+          description: advanced
+            ? 'Les réglages complets et le Hub sont visibles.'
+            : 'Retour à l’interface simplifiée.',
+        }
+      )
     },
   })
 

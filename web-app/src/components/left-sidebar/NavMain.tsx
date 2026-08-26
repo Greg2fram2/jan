@@ -39,6 +39,7 @@ import { useThreadManagement } from '@/hooks/useThreadManagement'
 import { useSearchDialog } from '@/hooks/useSearchDialog'
 import { useProjectDialog } from '@/hooks/useProjectDialog'
 import { useAgentMode } from '@/hooks/useAgentMode'
+import { useCareAdvancedMode } from '@/care/useCareAdvancedMode'
 import { TEMPORARY_CHAT_ID } from '@/constants/chat'
 import { PlatformShortcuts, ShortcutAction } from '@/lib/shortcuts'
 
@@ -175,6 +176,8 @@ export function NavMain() {
   const { open: searchOpen, setOpen: setSearchOpen } = useSearchDialog()
   const { open: projectDialogOpen, setOpen: setProjectDialogOpen } =
     useProjectDialog()
+  // IA Pros Santé : le Hub de modèles n'apparaît qu'en mode avancé
+  const advancedMode = useCareAdvancedMode((s) => s.advanced)
   const navMainItems = getNavMainItems(
     () => setProjectDialogOpen(true),
     () => setSearchOpen(true),
@@ -187,7 +190,11 @@ export function NavMain() {
       useAgentMode.getState().setAgentMode(TEMPORARY_CHAT_ID, true)
       navigate({ to: route.careChat })
     }
-  ).filter((item) => item.title !== 'common:newAgentChat')
+  ).filter(
+    (item) =>
+      item.title !== 'common:newAgentChat' &&
+      (advancedMode || item.title !== 'common:hub')
+  )
 
   const handleCreateProject = async (name: string, assistantId?: string) => {
     const newProject = await addFolder(name, assistantId)

@@ -32,10 +32,21 @@ import {
 import cloneDeep from 'lodash/cloneDeep'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { useCareAdvancedMode } from '@/care/useCareAdvancedMode'
+
+// IA Pros Santé : réglages visibles hors mode avancé. Le reste (hardware,
+// MCP, providers, serveur API local…) n'apparaît qu'après Ctrl/Cmd+Maj+A.
+const CARE_SIMPLE_SETTINGS = [
+  'common:general',
+  'common:appearance',
+  'common:keyboardShortcuts',
+  'common:privacy',
+]
 
 const SettingsMenu = () => {
   const { t } = useTranslation()
   const [expandedProviders, setExpandedProviders] = useState(true)
+  const advancedMode = useCareAdvancedMode((s) => s.advanced)
 
   const matches = useMatches()
   const navigate = useNavigate()
@@ -233,7 +244,12 @@ const SettingsMenu = () => {
       <div className="h-full w-58 shrink-0 px-1.5 flex overflow-auto">
         <div className="flex flex-col gap-1 w-full font-medium">
           {/* Core settings */}
-          {coreSettings.map((menu) => (
+          {coreSettings
+            .filter(
+              (menu) =>
+                advancedMode || CARE_SIMPLE_SETTINGS.includes(menu.title)
+            )
+            .map((menu) => (
             <div key={menu.title}>
               <Link
                 to={menu.route}
@@ -248,6 +264,7 @@ const SettingsMenu = () => {
           ))}
 
           {/* Integrations section */}
+          {advancedMode && (
           <div className="mt-4">
             <span className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t('common:integrations')}
@@ -268,8 +285,10 @@ const SettingsMenu = () => {
               ))}
             </div>
           </div>
+          )}
 
           {/* Model Providers section */}
+          {advancedMode && (
           <div className="mt-4">
             <div className="flex items-center justify-between pl-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -357,6 +376,7 @@ const SettingsMenu = () => {
             </div>
             <div className="m-3" />
           </div>
+          )}
         </div>
       </div>
     </>

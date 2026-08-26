@@ -46,4 +46,11 @@ export const PlatformShortcuts: ShortcutMap = {
     aliasKeys: ['_', 'Subtract'],
     usePlatformMetaKey: true,
   },
+
+  // IA Pros Santé : bascule le mode avancé caché (réglages complets, Hub)
+  [ShortcutAction.TOGGLE_ADVANCED_MODE]: {
+    key: 'a',
+    usePlatformMetaKey: true,
+    shiftKey: true,
+  },
 }

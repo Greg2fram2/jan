@@ -70,6 +70,14 @@ vi.mock('@/containers/ProvidersAvatar', () => ({
   ),
 }))
 
+// IA Pros Santé : la plupart des tests historiques supposent le menu complet,
+// donc mode avancé actif par défaut ; les tests du mode simple le désactivent.
+const advancedState = { advanced: true }
+vi.mock('@/care/useCareAdvancedMode', () => ({
+  useCareAdvancedMode: (selector: (s: { advanced: boolean }) => unknown) =>
+    selector(advancedState),
+}))
+
 
 describe('SettingsMenu', () => {
   const mockNavigate = vi.fn()
@@ -82,6 +90,7 @@ describe('SettingsMenu', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    advancedState.advanced = true
 
     vi.mocked(useNavigate).mockReturnValue(mockNavigate)
     vi.mocked(useMatches).mockReturnValue(mockMatches)
@@ -232,5 +241,40 @@ describe('SettingsMenu', () => {
     expect(screen.getByTestId('provider-avatar-anthropic')).toBeInTheDocument()
     // Disabled section label is shown
     expect(screen.getByText('common:hiddenProviders')).toBeInTheDocument()
+  })
+
+  describe('mode simple (IA Pros Santé)', () => {
+    beforeEach(() => {
+      advancedState.advanced = false
+    })
+
+    it('shows only the simple settings entries', () => {
+      render(<SettingsMenu />)
+
+      expect(screen.getByText('common:general')).toBeInTheDocument()
+      expect(screen.getByText('common:appearance')).toBeInTheDocument()
+      expect(screen.getByText('common:keyboardShortcuts')).toBeInTheDocument()
+      expect(screen.getByText('common:privacy')).toBeInTheDocument()
+
+      expect(screen.queryByText('common:hardware')).not.toBeInTheDocument()
+      expect(
+        screen.queryByText('common:local_api_server')
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText('common:assistants')).not.toBeInTheDocument()
+      expect(screen.queryByText('common:attachments')).not.toBeInTheDocument()
+    })
+
+    it('hides integrations and model providers sections', () => {
+      render(<SettingsMenu />)
+
+      expect(screen.queryByText('common:mcp-servers')).not.toBeInTheDocument()
+      expect(screen.queryByText('common:claude_code')).not.toBeInTheDocument()
+      expect(
+        screen.queryByText('common:modelProviders')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('provider-avatar-openai')
+      ).not.toBeInTheDocument()
+    })
   })
 })
