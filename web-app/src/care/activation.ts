@@ -1,7 +1,7 @@
 // IA Pros Santé : activation par code à 12 caractères.
 // Le code, saisi au premier lancement, déchiffre un blob embarqué qui
 // contient la config client (clé API, profession). Le blob est généré à la
-// vente par scripts/care-make-activation.mjs ; sans le bon code il est
+// vente par web-app/scripts/care-make-activation.mjs ; sans le bon code il est
 // inexploitable (PBKDF2-SHA256 + AES-256-GCM).
 
 export interface CareActivationPayload {
