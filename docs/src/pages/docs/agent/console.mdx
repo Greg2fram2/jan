@@ -105,6 +105,32 @@ Two knobs in `agent.toml` and two in `~/.jan/config.toml` tune this:
 
 See [Project config](/docs/agent/project-config) for the `agent.toml` keys.
 
+## When a call fails
+
+Upstreams drop connections, rate-limit, and occasionally hand back a turn with nothing in it. The
+console resends the same request instead of ending the turn blank, and shows each attempt as it
+happens:
+
+```
+retrying 3/10 in 500ms: upstream returned 503, retrying
+```
+
+Resending is only safe while nothing has been committed, so it happens only when no answer text
+reached the transcript and no tool call ran. A turn that already streamed an answer, or already
+called a tool, is never replayed - repeating a `write` or a shell command would repeat its effects.
+
+What gets resent: a dropped or refused connection, a request timeout, HTTP 429/502/503/504, and a
+completion that finished with no content and no tool calls. Once the attempts run out the run stops
+with an error naming the last upstream failure, rather than a silently empty turn.
+
+| Key | Where | Default | What it does |
+| --- | --- | --- | --- |
+| `[agent].max_retries` | `agent.toml` | `10` | Attempts after the first failure. `0` turns retrying off |
+| `[agent].retry_backoff_ms` | `agent.toml` | `250` | Base delay, doubled per attempt and jittered. A `Retry-After` from the upstream wins |
+
+Set either from the console with `/settings`. See
+[Project config](/docs/agent/project-config) for the full description.
+
 ## Approving work
 
 Writes and shell commands are auto-approved. Start the console with `jan --safe` and they stop to
