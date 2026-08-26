@@ -1,0 +1,38 @@
+slug: amenagements-enfant
+name: Aménagements pour un enfant
+description: Propose des aménagements concrets (école, domicile) adaptés au profil de l'enfant.
+icon: "🎒"
+profession: ergotherapeute
+inputs:
+  - id: patient
+    label: Enfant (prénom ou initiales)
+    type: text
+    required: true
+    placeholder: "ex. Léo M."
+  - id: age
+    label: Âge et classe
+    type: text
+    required: true
+    placeholder: "ex. 7 ans, CE1"
+  - id: contexte
+    label: Contexte visé
+    type: select
+    required: true
+    options:
+      - École
+      - Domicile
+      - École et domicile
+  - id: difficultes
+    label: Difficultés observées
+    type: file_or_text
+    required: true
+    placeholder: "Situations concrètes où l'enfant est en difficulté…"
+    help: "Collez vos notes ou joignez un fichier texte (.txt, .md)."
+  - id: essais
+    label: Aménagements déjà essayés
+    type: text
+    multiline: true
+    placeholder: "ex. guide-doigts abandonné, tiers-temps en place…"
+output:
+  format: docx
+  filename: "Amenagements_{patient}_{date}.docx"

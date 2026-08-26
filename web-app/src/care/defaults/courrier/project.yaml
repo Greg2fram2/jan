@@ -1,0 +1,35 @@
+slug: courrier
+name: Courrier professionnel
+description: Rédige un courrier au médecin, à l'école ou à la MDPH à partir de vos points clés.
+icon: "✉️"
+profession: ergotherapeute
+inputs:
+  - id: destinataire
+    label: Destinataire
+    type: select
+    required: true
+    options:
+      - Médecin prescripteur
+      - École / enseignant
+      - MDPH
+      - Parents
+      - Autre professionnel de santé
+  - id: patient
+    label: Patient concerné (prénom ou initiales)
+    type: text
+    required: true
+    placeholder: "ex. Léo M."
+  - id: objet
+    label: Objet du courrier
+    type: text
+    required: true
+    placeholder: "ex. point d'étape du suivi, demande d'aménagements, renouvellement…"
+  - id: points
+    label: Points clés à transmettre
+    type: file_or_text
+    required: true
+    placeholder: "Listez librement ce que le courrier doit dire…"
+    help: "Collez vos notes ou joignez un fichier texte (.txt, .md)."
+output:
+  format: docx
+  filename: "Courrier_{patient}_{date}.docx"

@@ -47,7 +47,8 @@ export const ModelDownloadAction = ({
   const handleUseModel = useCallback(
     (modelId: string) => {
       navigate({
-        to: route.home,
+        // IA Pros Santé : threadModel est un paramètre du chat libre (/chat)
+        to: route.careChat,
         params: {},
         search: {
           threadModel: {

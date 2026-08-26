@@ -462,7 +462,8 @@ function SetupScreen() {
       JSON.stringify({ provider: 'llamacpp', model: modelId })
     )
     navigate({
-      to: route.home,
+      // IA Pros Santé : threadModel est un paramètre du chat libre (/chat)
+      to: route.careChat,
       replace: true,
       search: {
         threadModel: { id: modelId, provider: 'llamacpp' },

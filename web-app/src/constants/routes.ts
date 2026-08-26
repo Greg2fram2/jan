@@ -1,6 +1,9 @@
 export const route = {
-  // home as new chat or thread
+  // IA Pros Santé : l'accueil est la grille de Projets métier ;
+  // le chat libre historique de Jan vit sur /chat.
   home: '/',
+  careChat: '/chat',
+  careProject: '/projet/$slug',
   appLogs: '/logs',
   project: '/project',
   projectDetail: '/project/$projectId',

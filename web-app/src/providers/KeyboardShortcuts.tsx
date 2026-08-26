@@ -38,7 +38,8 @@ export function KeyboardShortcutsProvider() {
     ...newChatShortcut,
     callback: () => {
       useAgentMode.getState().removeThread(TEMPORARY_CHAT_ID)
-      router.navigate({ to: route.home })
+      // IA Pros Santé : le chat libre vit sur /chat, l'accueil est la grille de Projets
+      router.navigate({ to: route.careChat })
     },
   })
 

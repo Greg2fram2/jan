@@ -1,0 +1,35 @@
+slug: compte-rendu-seance
+name: Compte-rendu de séance
+description: Rédige un compte-rendu de séance structuré à partir de vos notes brutes.
+icon: "📝"
+profession: ergotherapeute
+inputs:
+  - id: patient
+    label: Patient (prénom ou initiales)
+    type: text
+    required: true
+    placeholder: "ex. Léo M."
+  - id: date
+    label: Date de la séance
+    type: text
+    required: true
+    placeholder: "ex. 27/08/2026"
+  - id: objectifs
+    label: Objectifs travaillés
+    type: text
+    multiline: true
+    placeholder: "ex. graphisme, motricité fine, régulation attentionnelle…"
+  - id: notes
+    label: Notes de séance
+    type: file_or_text
+    required: true
+    placeholder: "Vos notes brutes : activités proposées, réactions, observations…"
+    help: "Collez vos notes ou joignez un fichier texte (.txt, .md)."
+  - id: remarques
+    label: Remarques pour la suite
+    type: text
+    multiline: true
+    placeholder: "ex. à retravailler la prise du crayon, prévenir les parents…"
+output:
+  format: docx
+  filename: "CR_{patient}_{date}.docx"

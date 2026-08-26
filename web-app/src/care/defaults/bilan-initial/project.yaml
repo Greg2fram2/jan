@@ -1,0 +1,41 @@
+slug: bilan-initial
+name: Bilan initial
+description: Structure un bilan initial d'ergothérapie à partir de l'anamnèse et de vos observations.
+icon: "🧩"
+profession: ergotherapeute
+inputs:
+  - id: patient
+    label: Patient (prénom ou initiales)
+    type: text
+    required: true
+    placeholder: "ex. Léo M."
+  - id: age
+    label: Âge et classe
+    type: text
+    required: true
+    placeholder: "ex. 7 ans, CE1"
+  - id: motif
+    label: Motif de la demande
+    type: text
+    multiline: true
+    required: true
+    placeholder: "ex. difficultés graphomotrices signalées par l'école, adressé par le Dr X…"
+  - id: anamnese
+    label: Anamnèse
+    type: file_or_text
+    placeholder: "Éléments d'histoire développementale, scolarité, suivis en cours…"
+    help: "Collez vos notes ou joignez un fichier texte (.txt, .md)."
+  - id: observations
+    label: Observations et épreuves réalisées
+    type: file_or_text
+    required: true
+    placeholder: "Résultats d'épreuves (BHK, M-ABC…), observations cliniques…"
+    help: "Collez vos notes ou joignez un fichier texte (.txt, .md)."
+  - id: conclusions
+    label: Conclusions et projet proposé
+    type: text
+    multiline: true
+    placeholder: "Votre lecture clinique, axes de travail envisagés, rythme des séances…"
+output:
+  format: docx
+  filename: "Bilan_{patient}_{date}.docx"

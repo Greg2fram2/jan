@@ -96,7 +96,8 @@ export const MlxModelDownloadAction = memo(({ model }: { model: CatalogModel }) 
 
   const handleUseModel = useCallback(() => {
     navigate({
-      to: route.home,
+      // IA Pros Santé : threadModel est un paramètre du chat libre (/chat)
+      to: route.careChat,
       params: {},
       search: {
         threadModel: {

@@ -180,11 +180,12 @@ export function NavMain() {
     () => setSearchOpen(true),
     () => {
       useAgentMode.getState().removeThread(TEMPORARY_CHAT_ID)
-      navigate({ to: route.home })
+      // IA Pros Santé : l'accueil est la grille de Projets, le chat libre vit sur /chat
+      navigate({ to: route.careChat })
     },
     () => {
       useAgentMode.getState().setAgentMode(TEMPORARY_CHAT_ID, true)
-      navigate({ to: route.home })
+      navigate({ to: route.careChat })
     }
   ).filter((item) => item.title !== 'common:newAgentChat')
 
