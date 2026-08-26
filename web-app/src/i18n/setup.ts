@@ -56,9 +56,9 @@ const getStoredLanguage = (): string => {
   try {
     const stored = localStorage.getItem(localStorageKey.settingGeneral)
     const parsed = stored ? JSON.parse(stored) : {}
-    return parsed?.state?.currentLanguage || 'en'
+    return parsed?.state?.currentLanguage || 'fr'
   } catch {
-    return 'en'
+    return 'fr'
   }
 }
 

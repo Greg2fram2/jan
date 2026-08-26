@@ -179,23 +179,10 @@ describe('__root route', () => {
     expect(screen.getByTestId('download-events')).toBeInTheDocument()
   })
 
-  it('renders PromptAnalytic when productAnalyticPrompt is true', () => {
+  // IA Pros Santé : la télémétrie est supprimée du produit — le prompt de
+  // consentement ne doit jamais apparaître, quel que soit l'état hérité.
+  it('never renders PromptAnalytic (telemetry removed)', () => {
     h.productAnalyticPrompt = true
-    renderComponent()
-    expect(screen.getByTestId('prompt-analytic')).toBeInTheDocument()
-  })
-
-  // The setup screen is the single onboarding surface; this would otherwise
-  // stack on top of it asking for something the wizard already covers.
-  it('defers the analytics prompt while onboarding', () => {
-    h.isOnboarding = true
-    h.productAnalyticPrompt = true
-    renderComponent()
-    expect(screen.queryByTestId('prompt-analytic')).not.toBeInTheDocument()
-  })
-
-  it('does not render PromptAnalytic when productAnalyticPrompt is false', () => {
-    h.productAnalyticPrompt = false
     renderComponent()
     expect(screen.queryByTestId('prompt-analytic')).not.toBeInTheDocument()
   })
