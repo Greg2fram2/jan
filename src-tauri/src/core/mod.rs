@@ -1,4 +1,5 @@
 pub mod app;
+pub mod care;
 #[cfg(feature = "cli")]
 pub mod cli;
 pub mod downloads;

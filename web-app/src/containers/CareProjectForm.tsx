@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { PaperclipIcon, XIcon } from 'lucide-react'
+import { CareAudioTranscribeButton } from '@/containers/CareAudioTranscribeButton'
 import { route } from '@/constants/routes'
 import { SESSION_STORAGE_PREFIX } from '@/constants/chat'
 import { useThreads } from '@/hooks/useThreads'
@@ -80,6 +81,12 @@ function FileOrTextField({
           <PaperclipIcon className="size-3.5" />
           Joindre un fichier texte
         </button>
+        <CareAudioTranscribeButton
+          onText={(text) => {
+            onChange(value ? `${value.trimEnd()}\n\n${text}` : text)
+            if (fileName) setFileName(null)
+          }}
+        />
         {fileName && (
           <span className="inline-flex items-center gap-1 text-xs bg-main-view-fg/8 rounded px-1.5 py-0.5">
             {fileName}
