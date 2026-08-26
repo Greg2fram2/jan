@@ -1,22 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// IA Pros Santé : le chat libre a été déplacé de / vers /chat — ces tests
-// couvrent la route relogée (anciennement index.test.tsx).
+// IA Pros Santé : le chat libre a été déplacé de / vers /chat, gardé par
+// l'écran d'activation (anciennement le gate SetupScreen de index.test.tsx).
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import React from 'react'
 
 const h = vi.hoisted(() => ({
-  providers: [] as any[],
+  activated: true,
   search: { threadModel: undefined as any },
   setCurrentThreadId: vi.fn(),
   useTools: vi.fn(),
-  providerHasRemoteApiKeys: vi.fn(() => false),
-  predefinedProviders: [
-    { provider: 'openai' },
-    { provider: 'llamacpp' },
-    { provider: 'jan' },
-  ],
 }))
 
 vi.mock('@tanstack/react-router', () => ({
@@ -28,8 +22,8 @@ vi.mock('@/i18n/react-i18next-compat', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 
-vi.mock('@/hooks/useModelProvider', () => ({
-  useModelProvider: () => ({ providers: h.providers }),
+vi.mock('@/care/useCareActivation', () => ({
+  useCareActivation: (selector: any) => selector({ activated: h.activated }),
 }))
 
 vi.mock('@/hooks/useThreads', () => ({
@@ -58,20 +52,12 @@ vi.mock('@/containers/DropdownModelProvider', () => ({
   ),
 }))
 
-vi.mock('@/containers/SetupScreen', () => ({
-  default: () => <div data-testid="setup-screen" />,
+vi.mock('@/containers/CareActivationScreen', () => ({
+  default: () => <div data-testid="activation-screen" />,
 }))
 
 vi.mock('@/lib/utils', () => ({
   cn: (...c: any[]) => c.filter(Boolean).join(' '),
-}))
-
-vi.mock('@/lib/provider-api-keys', () => ({
-  providerHasRemoteApiKeys: (p: any) => h.providerHasRemoteApiKeys(p),
-}))
-
-vi.mock('@/constants/providers', () => ({
-  predefinedProviders: h.predefinedProviders,
 }))
 
 vi.mock('@/constants/routes', () => ({
@@ -88,9 +74,8 @@ const renderComponent = () => {
 describe('Chat route (/chat)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    h.providers = []
+    h.activated = true
     h.search = { threadModel: undefined }
-    h.providerHasRemoteApiKeys.mockReturnValue(false)
   })
 
   it('validateSearch returns threadModel from search params', () => {
@@ -104,23 +89,14 @@ describe('Chat route (/chat)', () => {
     expect(result.threadModel).toBeUndefined()
   })
 
-  it('renders SetupScreen when no valid providers exist', () => {
-    h.providers = []
+  it('renders the activation screen when not activated', () => {
+    h.activated = false
     renderComponent()
-    expect(screen.getByTestId('setup-screen')).toBeInTheDocument()
+    expect(screen.getByTestId('activation-screen')).toBeInTheDocument()
     expect(screen.queryByTestId('chat-input')).not.toBeInTheDocument()
   })
 
-  it('renders SetupScreen when predefined provider has no api key and no models', () => {
-    h.providers = [{ provider: 'openai', models: [] }]
-    h.providerHasRemoteApiKeys.mockReturnValue(false)
-    renderComponent()
-    expect(screen.getByTestId('setup-screen')).toBeInTheDocument()
-  })
-
-  it('renders chat UI when predefined provider has api key', () => {
-    h.providers = [{ provider: 'openai', models: [] }]
-    h.providerHasRemoteApiKeys.mockReturnValue(true)
+  it('renders chat UI when activated', () => {
     renderComponent()
     expect(screen.getByTestId('chat-input')).toBeInTheDocument()
     expect(screen.getByTestId('header-page')).toBeInTheDocument()
@@ -128,34 +104,7 @@ describe('Chat route (/chat)', () => {
     expect(screen.getByText('chat:description')).toBeInTheDocument()
   })
 
-  it('renders chat UI when llamacpp provider has models', () => {
-    h.providers = [{ provider: 'llamacpp', models: [{ id: 'x' }] }]
-    h.providerHasRemoteApiKeys.mockReturnValue(false)
-    renderComponent()
-    expect(screen.getByTestId('chat-input')).toBeInTheDocument()
-  })
-
-  it('renders chat UI when jan provider has models', () => {
-    h.providers = [{ provider: 'jan', models: [{ id: 'j' }] }]
-    renderComponent()
-    expect(screen.getByTestId('chat-input')).toBeInTheDocument()
-  })
-
-  it('renders chat UI for custom provider with models, no api key required', () => {
-    h.providers = [{ provider: 'custom-xyz', models: [{ id: 'c' }] }]
-    renderComponent()
-    expect(screen.getByTestId('chat-input')).toBeInTheDocument()
-  })
-
-  it('renders SetupScreen for custom provider with no models', () => {
-    h.providers = [{ provider: 'custom-xyz', models: [] }]
-    renderComponent()
-    expect(screen.getByTestId('setup-screen')).toBeInTheDocument()
-  })
-
   it('passes threadModel from search into DropdownModelProvider and ChatInput', () => {
-    h.providers = [{ provider: 'openai', models: [] }]
-    h.providerHasRemoteApiKeys.mockReturnValue(true)
     h.search = { threadModel: { id: 'gpt-x', provider: 'openai' } }
     renderComponent()
     expect(screen.getByTestId('dropdown')).toHaveTextContent('gpt-x')
@@ -164,8 +113,6 @@ describe('Chat route (/chat)', () => {
   })
 
   it('calls setCurrentThreadId(undefined) and useTools on mount', () => {
-    h.providers = [{ provider: 'openai', models: [] }]
-    h.providerHasRemoteApiKeys.mockReturnValue(true)
     renderComponent()
     expect(h.setCurrentThreadId).toHaveBeenCalledWith(undefined)
     expect(h.useTools).toHaveBeenCalled()

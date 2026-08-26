@@ -8,10 +8,9 @@ import { useTranslation } from '@/i18n/react-i18next-compat'
 import { useTools } from '@/hooks/useTools'
 import { cn } from '@/lib/utils'
 
-import { useModelProvider } from '@/hooks/useModelProvider'
-import SetupScreen from '@/containers/SetupScreen'
+import CareActivationScreen from '@/containers/CareActivationScreen'
+import { useCareActivation } from '@/care/useCareActivation'
 import { route } from '@/constants/routes'
-import { hasUsableProvider } from '@/lib/providerReadiness'
 
 type ThreadModel = {
   id: string
@@ -38,20 +37,18 @@ export const Route = createFileRoute(route.careChat as any)({
 
 function ChatHome() {
   const { t } = useTranslation()
-  const { providers } = useModelProvider()
+  const activated = useCareActivation((s) => s.activated)
   const search = useSearch({ from: route.careChat as any })
   const threadModel = (search as SearchParams).threadModel
   const { setCurrentThreadId } = useThreads()
   useTools()
 
-  const hasValidProviders = hasUsableProvider(providers)
-
   useEffect(() => {
     setCurrentThreadId(undefined)
   }, [setCurrentThreadId])
 
-  if (!hasValidProviders) {
-    return <SetupScreen />
+  if (!activated) {
+    return <CareActivationScreen />
   }
 
   return (

@@ -1,28 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// IA Pros Santé : l'accueil (/) est la grille de Projets métier.
-// Les anciens tests du chat home vivent désormais dans chat.test.tsx.
+// IA Pros Santé : l'accueil (/) est la grille de Projets métier, gardée par
+// l'écran d'activation. Les anciens tests du chat home vivent dans chat.test.tsx.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import React from 'react'
 
 const h = vi.hoisted(() => ({
-  providers: [] as any[],
+  activated: false,
   setCurrentThreadId: vi.fn(),
-  providerHasRemoteApiKeys: vi.fn(() => false),
-  predefinedProviders: [
-    { provider: 'openai' },
-    { provider: 'llamacpp' },
-    { provider: 'jan' },
-  ],
 }))
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (config: any) => ({ ...config, id: '/' }),
 }))
 
-vi.mock('@/hooks/useModelProvider', () => ({
-  useModelProvider: () => ({ providers: h.providers }),
+vi.mock('@/care/useCareActivation', () => ({
+  useCareActivation: (selector: any) => selector({ activated: h.activated }),
 }))
 
 vi.mock('@/hooks/useThreads', () => ({
@@ -37,16 +31,8 @@ vi.mock('@/containers/CareProjectsGrid', () => ({
   default: () => <div data-testid="care-grid" />,
 }))
 
-vi.mock('@/containers/SetupScreen', () => ({
-  default: () => <div data-testid="setup-screen" />,
-}))
-
-vi.mock('@/lib/provider-api-keys', () => ({
-  providerHasRemoteApiKeys: (p: any) => h.providerHasRemoteApiKeys(p),
-}))
-
-vi.mock('@/constants/providers', () => ({
-  predefinedProviders: h.predefinedProviders,
+vi.mock('@/containers/CareActivationScreen', () => ({
+  default: () => <div data-testid="activation-screen" />,
 }))
 
 vi.mock('@/constants/routes', () => ({
@@ -63,29 +49,25 @@ const renderComponent = () => {
 describe('Index route (grille de Projets)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    h.providers = []
-    h.providerHasRemoteApiKeys.mockReturnValue(false)
+    h.activated = false
   })
 
-  it('renders SetupScreen when no valid providers exist', () => {
-    h.providers = []
+  it('renders the activation screen when not activated', () => {
     renderComponent()
-    expect(screen.getByTestId('setup-screen')).toBeInTheDocument()
+    expect(screen.getByTestId('activation-screen')).toBeInTheDocument()
     expect(screen.queryByTestId('care-grid')).not.toBeInTheDocument()
   })
 
-  it('renders the projects grid when a provider is usable', () => {
-    h.providers = [{ provider: 'openai', models: [] }]
-    h.providerHasRemoteApiKeys.mockReturnValue(true)
+  it('renders the projects grid when activated', () => {
+    h.activated = true
     renderComponent()
     expect(screen.getByTestId('care-grid')).toBeInTheDocument()
     expect(screen.getByTestId('header-page')).toBeInTheDocument()
-    expect(screen.queryByTestId('setup-screen')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('activation-screen')).not.toBeInTheDocument()
   })
 
   it('clears the current thread id on mount', () => {
-    h.providers = [{ provider: 'openai', models: [] }]
-    h.providerHasRemoteApiKeys.mockReturnValue(true)
+    h.activated = true
     renderComponent()
     expect(h.setCurrentThreadId).toHaveBeenCalledWith(undefined)
   })

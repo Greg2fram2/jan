@@ -20,6 +20,7 @@ import { SystemEvent } from '@/types/events'
 import { isDev } from '@/lib/utils'
 import { invoke } from '@tauri-apps/api/core'
 import { providerHasRemoteApiKeys, providerRemoteApiKeyChain } from '@/lib/provider-api-keys'
+import { bootstrapCareProvider } from '@/care/useCareActivation'
 
 type ProviderCustomHeader = {
   header: string
@@ -213,6 +214,9 @@ export function DataProvider() {
       setProviders(fetched)
       // Seed keyring keys into the merged store (predefined + engine + custom).
       await applyKeyringKeys()
+      // IA Pros Santé : réaffirme la config du provider verrouillé (URL,
+      // modèle) si l'app est activée — corrige toute dérive au démarrage.
+      bootstrapCareProvider()
       // Register active remote providers with the backend, keys now in place.
       useModelProvider.getState().providers.forEach((provider) => {
         if (provider.active) {
