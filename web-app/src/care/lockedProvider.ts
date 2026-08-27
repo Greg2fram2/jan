@@ -8,8 +8,9 @@ import { openAIProviderSettings } from '@/constants/providers'
 
 export const CARE_PROVIDER_NAME = 'scaleway'
 export const CARE_BASE_URL = 'https://api.scaleway.ai/v1'
-// TODO(Greg) : vérifier l'identifiant exact du modèle dans le catalogue Scaleway.
-export const CARE_MODEL_ID = 'deepseek-v4-flash'
+// Identifiant validé en direct sur l'API Scaleway le 2026-08-27
+// (voir notes/fork-setup.md dans le dépôt parent).
+export const CARE_MODEL_ID = 'deepseek-v4-flash-0731'
 
 export const CARE_PLACEHOLDER_KEY = 'REMPLACER-PAR-VRAIE-CLE-SCALEWAY'
 
@@ -62,11 +63,26 @@ export function ensureLockedProvider(): void {
   const patch: Partial<ModelProvider> = {}
   if (existing.base_url !== CARE_BASE_URL) patch.base_url = CARE_BASE_URL
   if (!existing.models?.some((m) => m.id === CARE_MODEL_ID)) {
-    patch.models = [...(existing.models ?? []), careModel()]
+    // Un ancien CARE_MODEL_ID resté en config pointerait vers un modèle que
+    // Scaleway ne sert plus : on le purge en même temps qu'on ajoute le bon.
+    const kept = (existing.models ?? []).filter(
+      (m) => !m.id.startsWith('deepseek-v4-flash')
+    )
+    patch.models = [...kept, careModel()]
   }
   if (!existing.active) patch.active = true
   if (Object.keys(patch).length > 0) {
     store.updateProvider(CARE_PROVIDER_NAME, patch)
+  }
+
+  // Une sélection persistée peut encore viser un ancien identifiant care ;
+  // on ne touche pas à une sélection hors provider care (mode avancé).
+  const { selectedProvider, selectedModel } = useModelProvider.getState()
+  if (
+    selectedProvider === CARE_PROVIDER_NAME &&
+    selectedModel?.id !== CARE_MODEL_ID
+  ) {
+    store.selectModelProvider(CARE_PROVIDER_NAME, CARE_MODEL_ID)
   }
 }
 

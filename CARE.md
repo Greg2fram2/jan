@@ -41,7 +41,7 @@ Windows en locale française formate `'1 400'`. À ignorer.
 | Fonctionnalité | Fichiers clés |
 |---|---|
 | Activation par code (12 car., PBKDF2 + AES-GCM) | `web-app/src/care/activation.ts`, `useCareActivation.ts`, `containers/CareActivationScreen.tsx`, générateur `web-app/scripts/care-make-activation.mjs` |
-| Provider Scaleway verrouillé | `web-app/src/care/lockedProvider.ts` |
+| Provider Scaleway verrouillé (modèle `deepseek-v4-flash-0731`, `reasoning_effort: none` par défaut) | `web-app/src/care/lockedProvider.ts`, injection dans `web-app/src/lib/custom-chat-transport.ts` |
 | Projets métier (formulaires → thread) | `web-app/src/care/projects.ts`, `types.ts`, `buildPrompt.ts`, `defaults/<slug>/{project.yaml,system.md,template.md}`, `containers/CareProjectsGrid.tsx`, `CareProjectForm.tsx` |
 | Projets sur disque (doc § 3) | commande Rust `care_list_projects`, `refreshCareProjects()` dans `projects.ts` |
 | Mode avancé caché (UI Jan complète) | `web-app/src/care/useCareAdvancedMode.ts` (Ctrl/Cmd+Maj+A) |
@@ -84,9 +84,6 @@ Le dépôt contient un blob de développement chiffrant le placeholder
 
 ## Reste à faire (humain)
 
-- [ ] **Vérifier l'identifiant du modèle** dans le catalogue Scaleway :
-  `CARE_MODEL_ID = 'deepseek-v4-flash'` dans
-  `web-app/src/care/lockedProvider.ts` est un TODO.
 - [ ] **Générer un vrai blob d'activation** avec une vraie clé (voir
   ci-dessus) avant tout build client.
 - [ ] **Tester la dictée micro en réel** : la demande d'autorisation micro de

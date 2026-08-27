@@ -55,6 +55,7 @@ import { encodeVideoSentinel, parseVideoDataUrl } from '@/lib/video-sentinel'
 import { isPredefinedRemoteProvider } from '@/lib/providerCaps'
 import { paramsSettings } from '@/lib/predefinedParams'
 import { CHAT_SLOT_ID } from '@/constants/models'
+import { CARE_PROVIDER_NAME } from '@/care/lockedProvider'
 
 export type TokenUsageCallback = (
   usage: LanguageModelUsage,
@@ -1213,6 +1214,15 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
         ...modelSamplingDefaults,
         ...(inferenceParams ?? {}),
         ...reasoningParams,
+      }
+      // IA Pros Santé : DeepSeek raisonne par défaut (latence + tokens payés
+      // pour rien sur des comptes rendus) — le provider verrouillé coupe le
+      // raisonnement, sauf réglage explicite posé en mode avancé.
+      if (
+        effectiveProviderName === CARE_PROVIDER_NAME &&
+        mergedParams.reasoning_effort === undefined
+      ) {
+        mergedParams.reasoning_effort = 'none'
       }
       if (isPredefinedRemoteProvider(effectiveProviderName)) {
         for (const key of Object.keys(paramsSettings)) delete mergedParams[key]
