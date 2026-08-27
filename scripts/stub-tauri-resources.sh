@@ -9,10 +9,6 @@ mkdir -p src-tauri/resources/bin src-tauri/resources/pre-install src-tauri/icons
 [ -f src-tauri/resources/LICENSE ] || touch src-tauri/resources/LICENSE
 [ -f web-app/dist/index.html ] || touch web-app/dist/index.html
 [ "$(ls -A src-tauri/resources/pre-install 2>/dev/null)" ] || touch src-tauri/resources/pre-install/.gitkeep
-for bin in uv bun; do
-  stub="src-tauri/resources/bin/${bin}-${TRIPLE}"
-  [ -f "$stub" ] || touch "$stub"
-done
 # The engine worker and the ggml runtime beside it. `libggml*` is a glob in the
 # bundle config, and a glob that matches nothing is an error (GlobPathNotFound),
 # not an empty set -- so one stub library is required, not optional. The CLI is
@@ -30,6 +26,12 @@ case "$(uname -s)" in
 esac
 for bin in jan jan-cli jan-llama-worker; do
   [ -f "src-tauri/resources/bin/${bin}${EXE}" ] || touch "src-tauri/resources/bin/${bin}${EXE}"
+done
+# externalBin entries get the target triple AND the platform suffix appended,
+# so on Windows the sidecar stubs need the .exe as well.
+for bin in uv bun; do
+  stub="src-tauri/resources/bin/${bin}-${TRIPLE}${EXE}"
+  [ -f "$stub" ] || touch "$stub"
 done
 ls src-tauri/resources/bin/*ggml*."${LIB##*.}"* >/dev/null 2>&1 || touch "src-tauri/resources/bin/$LIB"
 # Icons are gitignored; generate_context!() requires them at compile time
